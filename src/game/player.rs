@@ -17,6 +17,11 @@ fn player_actions() -> InputMap<PlayerAction> {
     use PlayerAction::*;
     let mut input_map = InputMap::default();
 
+    input_map.insert(KeyCode::W, Up);
+    input_map.insert(KeyCode::D, Right);
+    input_map.insert(KeyCode::S, Down);
+    input_map.insert(KeyCode::A, Left);
+
     input_map
 }
 
