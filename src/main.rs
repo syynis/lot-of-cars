@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use game::GamePlugin;
+use lifetime::LifetimePlugin;
 
 mod game;
+pub mod lifetime;
 
 fn main() {
     let mut app = App::new();
@@ -34,6 +36,7 @@ fn main() {
             .set(ImagePlugin::default_nearest())
             .set(log_plugin),
         GamePlugin,
+        LifetimePlugin,
     ))
     .insert_resource(ClearColor(Color::ANTIQUE_WHITE))
     .insert_resource(Msaa::Off)

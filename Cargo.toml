@@ -25,10 +25,11 @@ version = "0.21"
 optional = true
 
 [features]
-default = ["hot", "dyn", "inspector"]
+default = ["hot", "dyn", "inspector", "phys-debug"]
 hot = [ "bevy/file_watcher" ]
 dyn = [ "bevy/dynamic_linking" ]
 inspector = [ "bevy-inspector-egui" ]
+phys-debug = [ "bevy_xpbd_2d/debug-plugin"]
 
 [profile.wasm-release]
 inherits = "release"

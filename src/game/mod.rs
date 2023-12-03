@@ -1,10 +1,11 @@
-mod player;
+pub mod car;
+pub mod player;
 
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_xpbd_2d::prelude::*;
 
-use self::player::PlayerPlugin;
+use self::{car::CarPlugin, player::PlayerPlugin};
 
 pub struct GamePlugin;
 
@@ -14,6 +15,7 @@ impl Plugin for GamePlugin {
             PhysicsPlugins::default(),
             PhysicsDebugPlugin::default(),
             PlayerPlugin,
+            CarPlugin,
         ));
 
         app.add_state::<GameState>()
@@ -33,4 +35,7 @@ pub enum GameState {
 
 #[derive(Resource, Reflect, Default, AssetCollection, Debug)]
 #[reflect(Resource)]
-pub struct GameAssets {}
+pub struct GameAssets {
+    #[asset(path = "player.png")]
+    pub player: Handle<Image>,
+}
