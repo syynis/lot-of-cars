@@ -57,7 +57,7 @@ fn setup(mut cmds: Commands, assets: Res<GameAssets>) {
         LinearVelocity::default(),
         AngularVelocity::default(),
         Position::default(),
-        Collider::cuboid(16., 16.),
+        Collider::cuboid(10., 14.),
         SpriteBundle {
             texture: assets.player.clone_weak(),
             ..default()
@@ -86,7 +86,7 @@ fn movement(
     let direction = Vec2::new(horizontal as Scalar, vertical as Scalar);
 
     if direction.length_squared() != 0.0 {
-        vel.0 += direction * 1024. * time.delta_seconds();
+        vel.0 += direction * 2500. * time.delta_seconds();
     }
     vel.0 *= 0.8;
 }
