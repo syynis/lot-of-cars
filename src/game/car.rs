@@ -52,6 +52,10 @@ impl Trajectory {
     pub fn pos(&self) -> Vec2 {
         self.curve.position(self.t)
     }
+
+    pub fn vel(&self) -> Vec2 {
+        self.curve.velocity(self.t)
+    }
 }
 
 fn spawn_cars(mut cmds: Commands, camera_q: Query<&OrthographicProjection, With<GameCamera>>) {
@@ -88,7 +92,7 @@ fn spawn_cars(mut cmds: Commands, camera_q: Query<&OrthographicProjection, With<
     let duration = rng.gen_range(12.5..14.5);
 
     // Car size
-    let car_size = Vec2::new(10., 18.);
+    let car_size = Vec2::new(50., 25.);
     cmds.spawn((
         Car,
         Trajectory::new(origin, end, factor_c1, factor_c2, duration),
@@ -110,15 +114,16 @@ fn spawn_cars(mut cmds: Commands, camera_q: Query<&OrthographicProjection, With<
 }
 
 fn handle_trajectory(
-    mut trajectory_q: Query<(&mut Position, &mut Trajectory)>,
+    mut trajectory_q: Query<(&mut Position, &mut Transform, &mut Trajectory)>,
     time: Res<Time>,
     mut gizmos: Gizmos,
 ) {
-    for (mut pos, mut trajectory) in trajectory_q.iter_mut() {
+    for (mut pos, mut transform, mut trajectory) in trajectory_q.iter_mut() {
         let dt = time.delta_seconds();
         **pos = trajectory.pos();
+        let vel = trajectory.vel().normalize_or_zero();
 
-        // TODO change rotation
+        transform.rotation = Quat::from_rotation_arc(Vec3::X, vel.extend(0.));
 
         let subdivisions = 20;
         for (start, vel) in trajectory
@@ -126,7 +131,7 @@ fn handle_trajectory(
             .iter_positions(subdivisions)
             .zip(trajectory.curve.iter_velocities(subdivisions))
         {
-            gizmos.line_2d(start, start + vel.normalize_or_zero() * 100., Color::RED);
+            gizmos.line_2d(start, start + vel.normalize_or_zero() * 250., Color::RED);
         }
 
         let t = trajectory.t + (dt / trajectory.duration);

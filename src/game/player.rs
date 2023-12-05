@@ -57,7 +57,7 @@ fn setup(mut cmds: Commands, assets: Res<GameAssets>) {
         LinearVelocity::default(),
         AngularVelocity::default(),
         Position::default(),
-        Collider::cuboid(10., 14.),
+        Collider::cuboid(16., 20.),
         SpriteBundle {
             texture: assets.player.clone_weak(),
             ..default()
