@@ -6,7 +6,7 @@ use bevy_xpbd_2d::prelude::*;
 
 use crate::{lifetime::Lifetime, GameCamera};
 
-use super::{player::Player, GameState};
+use super::{player::Player, GameAssets, GameState};
 
 pub struct CarPlugin;
 
@@ -17,6 +17,7 @@ impl Plugin for CarPlugin {
             (
                 spawn_cars.run_if(on_timer(Duration::from_millis(3000))),
                 handle_trajectory,
+                car_sprite_from_rotation,
                 car_car_contact.run_if(on_event::<CollisionStarted>()),
                 car_player_contact.run_if(on_event::<CollisionStarted>()),
             )
@@ -58,7 +59,11 @@ impl Trajectory {
     }
 }
 
-fn spawn_cars(mut cmds: Commands, camera_q: Query<&OrthographicProjection, With<GameCamera>>) {
+fn spawn_cars(
+    mut cmds: Commands,
+    camera_q: Query<&OrthographicProjection, With<GameCamera>>,
+    assets: Res<GameAssets>,
+) {
     let Ok(proj) = camera_q.get_single() else {
         return;
     };
@@ -75,14 +80,22 @@ fn spawn_cars(mut cmds: Commands, camera_q: Query<&OrthographicProjection, With<
 
         let origin = Vec2::new(origin_x, min.y);
         let end = Vec2::new(end_x, size.y);
-        (origin, end)
+        if rng.gen_bool(0.5) {
+            (origin, end)
+        } else {
+            (end, origin)
+        }
     } else {
         let origin_y = rng.gen_range(min.y..(min.y + size.y));
         let end_y = rng.gen_range(min.y..(max.y + size.y));
 
         let origin = Vec2::new(min.x, origin_y);
         let end = Vec2::new(max.x, end_y);
-        (origin, end)
+        if rng.gen_bool(0.5) {
+            (origin, end)
+        } else {
+            (end, origin)
+        }
     };
 
     // Control point offsets
@@ -92,50 +105,79 @@ fn spawn_cars(mut cmds: Commands, camera_q: Query<&OrthographicProjection, With<
     let duration = rng.gen_range(12.5..14.5);
 
     // Car size
-    let car_size = Vec2::new(50., 25.);
+    let car_size = Vec2::new(40., 20.);
     cmds.spawn((
         Car,
         Trajectory::new(origin, end, factor_c1, factor_c2, duration),
         Lifetime::new(duration + 0.1),
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::BLACK,
-                custom_size: Some(car_size),
-                ..default()
-            },
+        SpriteSheetBundle {
+            texture_atlas: assets.blue_car.clone_weak(),
+            transform: Transform::from_translation(origin.extend(0.)),
             ..default()
         },
-        LinearVelocity::default(),
-        AngularVelocity::default(),
-        RigidBody::Kinematic,
-        Collider::cuboid(car_size.x, car_size.y),
-        Position::new(origin),
-    ));
+    ))
+    .with_children(|parent| {
+        parent.spawn((
+            RigidBody::Kinematic,
+            Collider::cuboid(car_size.x, car_size.y),
+            SpatialBundle::default(),
+        ));
+    });
+}
+
+fn car_sprite_from_rotation(
+    mut car_q: Query<(&mut TextureAtlasSprite, &Children), With<Car>>,
+    collider_q: Query<&Rotation, Without<Car>>,
+) {
+    for (mut sprite, children) in car_q.iter_mut() {
+        let rotation = collider_q
+            .get(*children.first().unwrap())
+            .expect("Should have rotation");
+        let angle = rotation.as_degrees();
+        let angle = if angle.is_sign_positive() {
+            (angle - 360.).abs()
+        } else {
+            angle.abs()
+        }
+        .clamp(0., 359.);
+        let angle_per_index = 7.34; // 360 / 49
+
+        let index = (angle / angle_per_index) as usize;
+        sprite.index = index;
+        println!("angle: {}", angle);
+    }
 }
 
 fn handle_trajectory(
-    mut trajectory_q: Query<(&mut Position, &mut Transform, &mut Trajectory)>,
+    mut trajectory_q: Query<(&mut Transform, &mut Trajectory, &Children), With<Car>>,
+    mut collider_q: Query<&mut Transform, Without<Car>>,
     time: Res<Time>,
-    mut gizmos: Gizmos,
+    #[cfg(debug_assertions)] mut gizmos: Gizmos,
 ) {
-    for (mut pos, mut transform, mut trajectory) in trajectory_q.iter_mut() {
-        let dt = time.delta_seconds();
-        **pos = trajectory.pos();
+    let dt = time.delta_seconds();
+    for (mut transform, mut trajectory, children) in trajectory_q.iter_mut() {
+        transform.translation = trajectory.pos().extend(transform.translation.z);
         let vel = trajectory.vel().normalize_or_zero();
 
-        transform.rotation = Quat::from_rotation_arc(Vec3::X, vel.extend(0.));
+        let mut collider_transform = collider_q
+            .get_mut(*children.first().unwrap())
+            .expect("Should have transform");
+        collider_transform.rotation = Quat::from_rotation_arc_2d(Vec2::X, vel);
 
-        let subdivisions = 20;
-        for (start, vel) in trajectory
-            .curve
-            .iter_positions(subdivisions)
-            .zip(trajectory.curve.iter_velocities(subdivisions))
+        trajectory.t += dt / trajectory.duration;
+
+        // Debug
+        #[cfg(debug_assertions)]
         {
-            gizmos.line_2d(start, start + vel.normalize_or_zero() * 250., Color::RED);
+            let subdivisions = 20;
+            for (start, vel) in trajectory
+                .curve
+                .iter_positions(subdivisions)
+                .zip(trajectory.curve.iter_velocities(subdivisions))
+            {
+                gizmos.line_2d(start, start + vel.normalize_or_zero() * 250., Color::RED);
+            }
         }
-
-        let t = trajectory.t + (dt / trajectory.duration);
-        trajectory.t = t;
     }
 }
 

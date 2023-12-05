@@ -38,4 +38,7 @@ pub enum GameState {
 pub struct GameAssets {
     #[asset(path = "player.png")]
     pub player: Handle<Image>,
+    #[asset(texture_atlas(tile_size_x = 50., tile_size_y = 50., columns = 7, rows = 7,))]
+    #[asset(path = "blue_car.png")]
+    pub blue_car: Handle<TextureAtlas>,
 }
