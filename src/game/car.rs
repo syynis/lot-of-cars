@@ -4,9 +4,9 @@ use std::time::Duration;
 use bevy::{math::cubic_splines::CubicCurve, prelude::*, time::common_conditions::on_timer};
 use bevy_xpbd_2d::prelude::*;
 
-use crate::{lifetime::Lifetime, GameCamera};
+use crate::lifetime::Lifetime;
 
-use super::{player::Player, GameAssets, GameState};
+use super::{player::Player, GameAssets, GameCamera, GameState};
 
 pub struct CarPlugin;
 

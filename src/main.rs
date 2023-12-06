@@ -1,9 +1,8 @@
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use game::GamePlugin;
-use lifetime::LifetimePlugin;
 
 mod game;
-pub mod lifetime;
+mod lifetime;
 
 fn main() {
     let mut app = App::new();
@@ -40,11 +39,8 @@ fn main() {
             .set(ImagePlugin::default_nearest())
             .set(log_plugin),
         GamePlugin,
-        LifetimePlugin,
     ))
-    .insert_resource(ClearColor(Color::ANTIQUE_WHITE))
-    .insert_resource(Msaa::Off)
-    .add_systems(Startup, setup);
+    .insert_resource(Msaa::Off);
 
     #[cfg(feature = "inspector")]
     app.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new());
@@ -55,19 +51,4 @@ fn main() {
     }
 
     app.run();
-}
-
-#[derive(Component, Default)]
-struct GameCamera;
-fn setup(mut cmds: Commands) {
-    cmds.spawn((
-        Camera2dBundle::default(),
-        #[cfg(debug_assertions)]
-        bevy_pancam::PanCam {
-            grab_buttons: vec![MouseButton::Middle],
-            enabled: true,
-            ..default()
-        },
-        GameCamera,
-    ));
 }
