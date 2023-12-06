@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{asset::AssetMetaCheck, prelude::*};
 use game::GamePlugin;
 use lifetime::LifetimePlugin;
 
@@ -7,6 +7,10 @@ pub mod lifetime;
 
 fn main() {
     let mut app = App::new();
+
+    // Fix for itch.io issue
+    app.insert_resource(AssetMetaCheck::Never);
+
     app.edit_schedule(Main, |schedule| {
         schedule.set_build_settings(bevy::ecs::schedule::ScheduleBuildSettings {
             ambiguity_detection: bevy::ecs::schedule::LogLevel::Error,

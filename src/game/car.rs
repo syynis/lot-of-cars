@@ -15,7 +15,7 @@ impl Plugin for CarPlugin {
         app.add_systems(
             Update,
             (
-                spawn_cars.run_if(on_timer(Duration::from_millis(3000))),
+                spawn_cars.run_if(on_timer(Duration::from_millis(500))),
                 handle_trajectory,
                 car_sprite_from_rotation,
                 car_car_contact.run_if(on_event::<CollisionStarted>()),
@@ -28,6 +28,9 @@ impl Plugin for CarPlugin {
 
 #[derive(Component)]
 pub struct Car;
+
+#[derive(Component)]
+struct CarCollider;
 
 #[derive(Component)]
 pub struct Trajectory {
@@ -118,6 +121,7 @@ fn spawn_cars(
     ))
     .with_children(|parent| {
         parent.spawn((
+            CarCollider,
             RigidBody::Kinematic,
             Collider::cuboid(car_size.x, car_size.y),
             SpatialBundle::default(),
@@ -127,7 +131,7 @@ fn spawn_cars(
 
 fn car_sprite_from_rotation(
     mut car_q: Query<(&mut TextureAtlasSprite, &Children), With<Car>>,
-    collider_q: Query<&Rotation, Without<Car>>,
+    collider_q: Query<&Rotation, With<CarCollider>>,
 ) {
     for (mut sprite, children) in car_q.iter_mut() {
         let rotation = collider_q
@@ -175,7 +179,7 @@ fn handle_trajectory(
                 .iter_positions(subdivisions)
                 .zip(trajectory.curve.iter_velocities(subdivisions))
             {
-                gizmos.line_2d(start, start + vel.normalize_or_zero() * 250., Color::RED);
+                gizmos.line_2d(start, start + vel.normalize_or_zero() * 50., Color::RED);
             }
         }
     }
@@ -184,19 +188,19 @@ fn handle_trajectory(
 fn car_car_contact(
     mut cmds: Commands,
     mut collision_events: EventReader<CollisionStarted>,
-    car_q: Query<Entity, With<Car>>,
+    collider_q: Query<&Parent, With<CarCollider>>,
 ) {
     for collision in collision_events.read() {
-        if let Ok([e1, e2]) = car_q.get_many([collision.0, collision.1]) {
-            cmds.entity(e1).despawn_recursive();
-            cmds.entity(e2).despawn_recursive();
+        if let Ok([e1, e2]) = collider_q.get_many([collision.0, collision.1]) {
+            cmds.entity(e1.get()).despawn_recursive();
+            cmds.entity(e2.get()).despawn_recursive();
         }
     }
 }
 
 fn car_player_contact(
     mut collision_events: EventReader<CollisionStarted>,
-    car_q: Query<Entity, With<Car>>,
+    collider_q: Query<(), (With<CarCollider>, With<Parent>)>,
     mut player_q: Query<(Entity, &mut Position), With<Player>>,
 ) {
     let Ok((player_entity, mut pos)) = player_q.get_single_mut() else {
@@ -212,7 +216,7 @@ fn car_player_contact(
         };
 
         if let Some(other) = other {
-            if car_q.get(other).is_ok() {
+            if collider_q.get(other).is_ok() {
                 **pos = Vec2::ZERO;
             }
         }
