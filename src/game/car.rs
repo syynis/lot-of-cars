@@ -105,10 +105,10 @@ fn spawn_cars(
     let factor_c1 = rng.gen_range(-1000.0..1000.0);
     let factor_c2 = rng.gen_range(-1000.0..1000.0);
     // Duration of car travel (this controls speed, lower => faster)
-    let duration = rng.gen_range(12.5..14.5);
+    let duration = rng.gen_range(2.0..4.0);
 
     // Car size
-    let car_size = Vec2::new(40., 20.);
+    let car_size = Vec2::new(20., 10.);
     cmds.spawn((
         Car,
         Trajectory::new(origin, end, factor_c1, factor_c2, duration),
@@ -148,7 +148,6 @@ fn car_sprite_from_rotation(
 
         let index = (angle / angle_per_index) as usize;
         sprite.index = index;
-        println!("angle: {}", angle);
     }
 }
 
@@ -173,7 +172,7 @@ fn handle_trajectory(
         // Debug
         #[cfg(debug_assertions)]
         {
-            let subdivisions = 20;
+            let subdivisions = 0;
             for (start, vel) in trajectory
                 .curve
                 .iter_positions(subdivisions)

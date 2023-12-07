@@ -57,9 +57,13 @@ fn setup(mut cmds: Commands, assets: Res<GameAssets>) {
         LinearVelocity::default(),
         AngularVelocity::default(),
         Position::default(),
-        Collider::cuboid(16., 20.),
-        SpriteBundle {
-            texture: assets.player.clone_weak(),
+        Collider::cuboid(8., 8.),
+        SpriteSheetBundle {
+            texture_atlas: assets.player.clone_weak(),
+            sprite: TextureAtlasSprite {
+                index: 7,
+                ..default()
+            },
             ..default()
         },
     ));
